@@ -16,6 +16,8 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from dealsight_intelligence.app.gradio_app import App
 
+space_app = App()
+demo = space_app.build()
 
 if __name__ == "__main__":
-    App().run()
+    space_app.launch(demo)

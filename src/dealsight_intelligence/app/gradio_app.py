@@ -599,7 +599,7 @@ class App:
     def run_once(self):
         return self.get_agent_framework().run()
 
-    def run(self):
+    def build(self):
         try:
             import gradio as gr
         except ImportError as exc:
@@ -615,14 +615,19 @@ class App:
         except Exception:
             theme = None
 
+        launch_kwargs = {"share": False, "inbrowser": False}
+        launch_signature = inspect.signature(gr.Blocks.launch)
         blocks_kwargs = {"title": "DealSight Intelligence", "fill_width": True}
         if theme is not None:
-            blocks_kwargs["theme"] = theme
-        launch_kwargs = {"share": False, "inbrowser": False}
+            if "theme" in launch_signature.parameters:
+                launch_kwargs["theme"] = theme
+            else:
+                blocks_kwargs["theme"] = theme
         if "css" in inspect.signature(gr.Blocks).parameters:
             blocks_kwargs["css"] = APP_CSS
-        elif "css" in inspect.signature(gr.Blocks.launch).parameters:
+        elif "css" in launch_signature.parameters:
             launch_kwargs["css"] = APP_CSS
+        self._launch_kwargs = launch_kwargs
 
         with gr.Blocks(**blocks_kwargs) as ui:
             log_data = gr.State([])
@@ -709,7 +714,17 @@ class App:
             timer = gr.Timer(value=300, active=True)
             timer.tick(run_with_logging, inputs=[log_data], outputs=[log_data, dashboard, logs, opportunities_dataframe])
             opportunities_dataframe.select(do_select, outputs=[modal_trigger])
+        return ui
+
+    def launch(self, ui=None):
+        ui = ui or self.build()
+        launch_kwargs = getattr(self, "_launch_kwargs", {"share": False, "inbrowser": False})
+        if "ssr_mode" in inspect.signature(ui.launch).parameters:
+            launch_kwargs.setdefault("ssr_mode", False)
         ui.launch(**launch_kwargs)
+
+    def run(self):
+        self.launch()
 
 
 def main(argv: list[str] | None = None):
