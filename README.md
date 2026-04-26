@@ -1,80 +1,165 @@
-﻿# DealSight Intelligence
+# DealSight Intelligence
 
-**Autonomous Multi-Agent Deal Hunting**
+## Autonomous Multi-Agent Orchestration for Real-Time Deal Discovery
 
-DealSight Intelligence is an end-to-end AI deal-finder. It scans live deal feeds, prices each candidate product through an ensemble of pricing agents (a frontier LLM with retrieval, a fine-tuned specialist model, and a local deep neural network), keeps a memory of opportunities, and can send alerts when a deal beats its estimated value by a configurable margin.
+DealSight Intelligence is a production-style AI system that scans live e-commerce deal feeds, estimates product value through a multi-agent pricing ensemble, and surfaces high-discount opportunities through a real-time dashboard and alerting workflow.
 
-The system is built so that every external dependency is optional. If Modal, Pushover, the vector store, or trained model artifacts are not available, the agents fall back to safe behavior instead of crashing.
+The system combines retrieval-augmented generation, a QLoRA fine-tuned Llama specialist, and a local PyTorch residual neural network to estimate whether a product is meaningfully underpriced compared with similar historical listings.
 
-## Highlights
+## Project Summary
 
-- **Multi-agent orchestration** — Scanner, Frontier, Specialist, Neural Network, Ensemble, Planning, and Messaging agents
-- **Retrieval-augmented pricing** — Chroma vector store of historical priced products supplies similar-item context to the frontier model
-- **Fine-tuned specialist** — QLoRA-tuned Llama adapter served on Modal for second-opinion pricing
-- **Local deep neural network** — residual MLP over hashed text features for a fully-offline price estimate
-- **Dry-run by default** — no real alerts go out until you explicitly opt in
-- **Tested core** — unit tests cover deals, scanner, planner, datasets, and the agent framework
+This project was designed as an end-to-end applied AI system for deal intelligence. It connects live RSS deal feeds, product retrieval, fine-tuned model inference, neural network pricing, ensemble scoring, memory tracking, and user-facing alerts.
 
-## Project Shape
+The core pipeline:
+
+1. Scans live e-commerce RSS feeds.
+2. Extracts candidate product deals.
+3. Retrieves the top 5 similar products from a 20,000-document Chroma vector store.
+4. Generates price estimates from three independent agents.
+5. Blends estimates using an 80/10/10 weighting strategy.
+6. Surfaces high-discount deals through a Gradio dashboard and optional Pushover alerts.
+
+## Key Highlights
+
+- Fine-tuned Meta Llama 3.2-3B on 20,000 e-commerce product listings using QLoRA.
+- Reduced GPU memory usage from 6.4 GB to 2.2 GB with 4-bit NF4 quantization.
+- Produced a compact 73.4 MB PEFT adapter for specialist price estimation.
+- Deployed the fine-tuned specialist model as a serverless GPU inference endpoint on Modal.
+- Tracked fine-tuning experiments and training metrics with Weights & Biases.
+- Built a 3-agent pricing ensemble using GPT-4o-mini with RAG, a QLoRA fine-tuned Llama specialist, and a PyTorch residual DNN.
+- Used a 20,000-document Chroma vector store for similar-product retrieval.
+- Built a real-time Gradio dashboard for deal review.
+- Added Pushover-based alerting for high-discount opportunities.
+- Designed safe fallback behavior so the system can run even when optional services are unavailable.
+
+## System Architecture
+
+| Component | Purpose |
+|---|---|
+| Scanner Agent | Reads live e-commerce RSS feeds and extracts candidate product deals |
+| Frontier Agent | Uses GPT-4o-mini with retrieval-augmented context from similar products |
+| Specialist Agent | Calls a QLoRA fine-tuned Llama model served through Modal |
+| Neural Network Agent | Uses a local PyTorch residual DNN for offline price estimation |
+| Ensemble Agent | Blends pricing estimates using an 80/10/10 weighting strategy |
+| Planning Agent | Selects the strongest deal based on estimated discount |
+| Messaging Agent | Sends optional Pushover alerts, with dry-run mode enabled by default |
+| Gradio App | Provides a real-time interface for reviewing discovered deals |
+
+## Technical Stack
+
+| Area | Tools and Libraries |
+|---|---|
+| Language | Python |
+| LLMs | GPT-4o-mini, Meta Llama 3.2-3B |
+| Fine-tuning | QLoRA, PEFT, 4-bit NF4 quantization |
+| Model Hosting | Modal serverless GPU endpoint |
+| Experiment Tracking | Weights & Biases |
+| Retrieval | Chroma vector store |
+| Deep Learning | PyTorch, torch.nn, CosineAnnealingLR, gradient clipping |
+| Dashboard | Gradio |
+| Alerts | Pushover |
+| Testing | Pytest |
+| Packaging | pyproject.toml, editable install |
+
+## Repository Structure
 
 ```text
 artifacts/
   datasets/
-  memory/memory.json
+  memory/
   models/
   vectorstores/
+
 notebooks/
   finetuning/
-src/dealsight_intelligence/
-  agents/
-  app/
-  data/
-  evaluation/
-  modal/
-  pricing/
+
 scripts/
+  01_curate_lite.py
+  02_build_vectorstore.py
+  04_train_ensemble.py
+  05_run_app.py
+  06_train_dnn_wandb.py
+  07_evaluate_dnn_wandb.py
+
+src/
+  dealsight_intelligence/
+    agents/
+    app/
+    data/
+    evaluation/
+    modal/
+    pricing/
+
 tests/
 ```
 
-The Python package is named `dealsight_intelligence` for import stability; the user-facing project name is **DealSight Intelligence**.
-
 ## Quick Start
 
-Create an environment and install the package:
+Clone the repository and create a virtual environment:
 
 ```powershell
-cd price-is-right
+git clone https://github.com/AbhinavVarma02/DealSight-Intelligence-Autonomous-Multi-Agent-Orchestration.git
+cd DealSight-Intelligence-Autonomous-Multi-Agent-Orchestration
+
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -e ".[app,dev]"
 copy .env.example .env
 ```
 
+Run one dry-run planning cycle:
+
+```powershell
+python scripts/05_run_app.py --once
+```
+
+Run the Gradio app:
+
+```powershell
+python scripts/05_run_app.py
+```
+
+Dry-run mode is enabled by default, so the app can be tested safely without sending real alerts.
+
+## Environment Variables
+
+Create a local `.env` file from `.env.example`.
+
+Required only for live integrations:
+
+```text
+OPENAI_API_KEY=
+PUSHOVER_USER=
+PUSHOVER_TOKEN=
+MODAL_TOKEN_ID=
+MODAL_TOKEN_SECRET=
+WANDB_API_KEY=
+```
+
+Example runtime settings:
+
+```text
+DEALSIGHT_INTELLIGENCE_DRY_RUN=true
+DEALSIGHT_INTELLIGENCE_DO_PUSH=false
+DEALSIGHT_INTELLIGENCE_STRUCTURED_DATASET_SOURCE=abhinavvathadi/items_lite
+DEALSIGHT_INTELLIGENCE_DATASET_PREFIX=lite
+DEALSIGHT_INTELLIGENCE_PROMPT_DATASET_SOURCE=abhinavvathadi/items_prompts_lite
+DEALSIGHT_INTELLIGENCE_RAW_DATASET_SOURCE=abhinavvathadi/items_raw_lite
+```
+
+Keep real API keys only in your local `.env` file. Do not commit `.env`.
+
 ## Dataset Sources
 
-Default local-development app dataset:
+The project supports structured, prompt, and raw dataset variants.
+
+Default structured dataset:
 
 ```text
 abhinavvathadi/items_lite
 ```
 
-Dataset purpose matters:
-
-```text
-items_lite / items_full
-  Main structured curated datasets. Use these for the app, vector store,
-  DNN train/eval, and pricing pipelines.
-
-items_prompts_lite / items_prompts_full
-  Prompt/completion datasets. Use these only for prompt-based fine-tuning
-  or prompt-evaluation scripts. Do not use them for vector stores.
-
-items_raw_lite / items_raw_full
-  Rawer source datasets. They are supported as sources, but are not the
-  default app-ready datasets.
-```
-
-Supported Hugging Face sources:
+Supported Hugging Face datasets:
 
 ```text
 abhinavvathadi/items_raw_full
@@ -85,72 +170,52 @@ abhinavvathadi/items_prompts_lite
 abhinavvathadi/items_raw_lite
 ```
 
-You can also use local exported Hugging Face dataset folders by passing their local path to `--dataset`.
+Dataset usage:
 
-Download the default structured app dataset:
+| Dataset Type | Purpose |
+|---|---|
+| items_lite or items_full | App runtime, vector store, DNN training, pricing pipelines |
+| items_prompts_lite or items_prompts_full | Prompt-based fine-tuning and prompt evaluation |
+| items_raw_lite or items_raw_full | Raw source data for curation |
+
+Download the default structured dataset:
 
 ```powershell
 python scripts/01_curate_lite.py --from-source
 ```
 
-Equivalent explicit command:
+Build the vector store:
 
 ```powershell
-python scripts/01_curate_lite.py --from-source --purpose structured --dataset abhinavvathadi/items_lite --prefix lite
+python scripts/02_build_vectorstore.py --dataset-path artifacts\datasets\train_lite.pkl
 ```
 
-Create a 20k lite dataset from raw Amazon metadata instead:
+Create a 20,000-product curated dataset from raw metadata:
 
 ```powershell
 python scripts/01_curate_lite.py --train-size 20000 --test-size 2000
 ```
 
-Switch to your full structured dataset:
+## Fine-Tuning Workflow
 
-```powershell
-python scripts/01_curate_lite.py --from-source --purpose structured --dataset abhinavvathadi/items_full --prefix full
-python scripts/02_build_vectorstore.py --dataset-path artifacts\datasets\train_full.pkl
-```
-
-Export prompt/completion data only for prompt training or prompt eval:
-
-```powershell
-python scripts/01_curate_lite.py --from-source --purpose prompt --dataset abhinavvathadi/items_prompts_lite --prefix prompts_lite
-```
-
-## Fine-Tuning Pipeline
-
-The QLoRA fine-tuning notebooks for the specialist pricing model live in:
+Fine-tuning notebooks are located in:
 
 ```text
 notebooks/finetuning/
 ```
 
-They cover LoRA/QLoRA setup, base-model evaluation, lite-mode training on `items_prompts_lite`, and testing the resulting PEFT adapter. These notebooks document the fine-tuning data path only; the runtime app and vector store continue to use structured `items_lite` data.
+The notebooks cover:
 
-Configure the same defaults in `.env`:
+1. QLoRA and quantization setup.
+2. Baseline model evaluation.
+3. Fine-tuning Meta Llama 3.2-3B on product listing data.
+4. Evaluation of the fine-tuned PEFT adapter.
 
-```text
-dealsight_intelligence_STRUCTURED_DATASET_SOURCE=abhinavvathadi/items_lite
-dealsight_intelligence_DATASET_PREFIX=lite
-dealsight_intelligence_PROMPT_DATASET_SOURCE=abhinavvathadi/items_prompts_lite
-dealsight_intelligence_RAW_DATASET_SOURCE=abhinavvathadi/items_raw_lite
-```
+The fine-tuned specialist model is designed to provide a domain-specific pricing estimate inside the larger ensemble.
 
-Run one dry-run planning cycle:
+## Deep Neural Network Workflow
 
-```powershell
-python scripts/05_run_app.py --once
-```
-
-Use the trained deep neural network weights:
-
-```powershell
-copy <path-to>\deep_neural_network.pth artifacts\models\deep_neural_network.pth
-python -m pip install -e ".[dnn]"
-```
-
-Optional W&B experiment tracking is included for retraining/evaluating the DNN with metrics:
+Train the PyTorch residual DNN with optional Weights & Biases tracking:
 
 ```powershell
 python -m pip install -e ".[dnn,tracking]"
@@ -158,51 +223,61 @@ python scripts/06_train_dnn_wandb.py --wandb --limit 1000
 python scripts/07_evaluate_dnn_wandb.py --wandb --limit 200
 ```
 
-W&B is disabled by default. To run without W&B, omit `--wandb`:
+Run without Weights & Biases:
 
 ```powershell
 python scripts/06_train_dnn_wandb.py --limit 1000
 python scripts/07_evaluate_dnn_wandb.py --limit 200
 ```
 
-To keep W&B local/offline when enabled:
+Use offline W&B mode:
 
 ```powershell
 $env:WANDB_MODE="offline"
 ```
 
-Run the Gradio app:
+## Testing
+
+Run the test suite:
 
 ```powershell
-python scripts/05_run_app.py
+pytest
 ```
 
-Dry-run mode is on by default. Add API keys and set these values when you are ready for live integrations:
+The tests cover core behavior for datasets, deal extraction, scanner logic, agent framework behavior, and neural network agent functionality.
 
-```text
-dealsight_intelligence_DRY_RUN=false
-dealsight_intelligence_DO_PUSH=true
-OPENAI_API_KEY=...
-PUSHOVER_USER=...
-PUSHOVER_TOKEN=...
-```
+## Safety and Fallback Design
 
-## Architecture
+The system is designed to avoid hard failures when optional services are unavailable.
 
-| Agent | Role |
-|------|------|
-| Scanner | Pulls DealNews RSS feeds, filters out sale events and category pages, summarizes individual product deals |
-| Frontier | GPT-4o-mini with vector-store retrieval to price the product against similar items |
-| Specialist | Modal-hosted QLoRA fine-tuned Llama adapter for a domain-tuned price estimate |
-| Neural Network | Local deep residual MLP on hashed text features |
-| Ensemble | Weighted blend of the three pricing signals |
-| Planning | Picks the best opportunity by discount and triggers messaging |
-| Messaging | Pushover alert (dry-run by default) |
+Examples:
 
-## Roadmap
+- If Modal is unavailable, the specialist model path can fall back safely.
+- If Pushover is not configured, alerts remain in dry-run mode.
+- If trained model artifacts are missing, the app can still run with available pricing paths.
+- If API keys are missing, live integrations remain disabled.
 
-1. **v1** — RSS scrape, heuristic or OpenAI scan, local pricing fallback, memory, dry-run alerts, Gradio table.
-2. **Better pricing** — create/download the lite dataset, build the vector store, enable RAG-based frontier pricing.
-3. **Specialist DNN path** — drop `deep_neural_network.pth` into `artifacts/models/` and install the `dnn` extra.
-4. **Optional tracking** — use W&B scripts for DNN train/validation/test metrics.
-5. **Full deployment** — deploy the Modal `Pricer`, train `ensemble_model.pkl`, enable Pushover, plot the 3D vector-store embedding view.
+## Current Status
+
+Implemented:
+
+- Live RSS deal scanning
+- Retrieval-augmented pricing
+- QLoRA fine-tuning workflow
+- Modal specialist endpoint path
+- PyTorch residual DNN pricing path
+- Weighted 3-agent ensemble
+- Gradio dashboard
+- Pushover alert workflow
+- Unit tests for core modules
+- Safe local development setup
+
+## Resume Alignment
+
+This repository supports the following project summary:
+
+Built a production-style multi-agent deal intelligence system combining GPT-4o-mini with RAG, a QLoRA fine-tuned Llama specialist, and a PyTorch residual DNN. The system scans live e-commerce RSS feeds, retrieves similar products from a 20,000-document Chroma vector store, blends pricing estimates, and surfaces high-discount opportunities through a Gradio dashboard and Pushover alerts.
+
+## License
+
+This project is intended for portfolio and educational use.
