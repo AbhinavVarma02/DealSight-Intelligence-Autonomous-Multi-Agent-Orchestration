@@ -14,6 +14,10 @@ DealSight Intelligence is a production-style AI system that scans live e-commerc
 
 The system combines retrieval-augmented generation, a QLoRA fine-tuned Llama specialist, and a local PyTorch residual neural network to estimate whether a product is meaningfully underpriced compared with similar historical listings.
 
+## Public Demo Note
+
+The Hugging Face Space is deployed in dry-run demo mode so recruiters and reviewers can understand the application flow without exposing private API keys or triggering paid external services. In this mode, live alerts are disabled and optional paid integrations such as OpenAI, Modal, Pushover, and hosted specialist inference can be enabled only through private environment secrets.
+
 ## Project Summary
 
 This project was designed as an end-to-end applied AI system for deal intelligence. It connects live RSS deal feeds, product retrieval, fine-tuned model inference, neural network pricing, ensemble scoring, memory tracking, and user-facing alerts.
