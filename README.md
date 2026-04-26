@@ -12,6 +12,8 @@ license: mit
 
 DealSight Intelligence is a production-style AI system that scans live e-commerce deal feeds, estimates product value through a multi-agent pricing ensemble, and surfaces high-discount opportunities through a real-time dashboard and alerting workflow.
 
+Live demo: [DealSight Intelligence on Hugging Face Spaces](https://abhinavvathadi-dealsight-intelligence.hf.space/)
+
 The system combines retrieval-augmented generation, a QLoRA fine-tuned Llama specialist, and a local PyTorch residual neural network to estimate whether a product is meaningfully underpriced compared with similar historical listings.
 
 ## Public Demo Note
