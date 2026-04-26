@@ -1,0 +1,57 @@
+﻿[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dealsight-intelligence"
+version = "0.1.0"
+description = "DealSight Intelligence — autonomous multi-agent deal-hunting app"
+requires-python = ">=3.10"
+dependencies = [
+  "python-dotenv>=1.0.0",
+  "pydantic>=2.0.0",
+]
+
+[project.optional-dependencies]
+app = [
+  "beautifulsoup4>=4.12.0",
+  "feedparser>=6.0.0",
+  "gradio>=4.0.0",
+  "openai>=1.40.0",
+  "plotly>=5.20.0",
+  "requests>=2.31.0",
+]
+ml = [
+  "chromadb>=0.5.0",
+  "datasets>=2.20.0",
+  "joblib>=1.4.0",
+  "numpy>=1.26.0",
+  "pandas>=2.0.0",
+  "scikit-learn>=1.4.0",
+  "sentence-transformers>=3.0.0",
+]
+dnn = [
+  "numpy>=1.26.0",
+  "scikit-learn>=1.4.0",
+  "torch>=2.3.0",
+]
+tracking = [
+  "wandb>=0.17.0",
+]
+modal = [
+  "accelerate>=0.33.0",
+  "bitsandbytes>=0.43.0",
+  "modal>=0.64.0",
+  "peft>=0.12.0",
+  "torch>=2.3.0",
+  "transformers>=4.43.0",
+]
+dev = [
+  "pytest>=8.0.0",
+]
+
+[project.scripts]
+dealsight-intelligence = "dealsight_intelligence.app.gradio_app:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
