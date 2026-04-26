@@ -1,3 +1,11 @@
+---
+title: DealSight Intelligence
+sdk: gradio
+app_file: app.py
+pinned: false
+license: mit
+---
+
 # DealSight Intelligence
 
 ## Autonomous Multi-Agent Orchestration for Real-Time Deal Discovery
